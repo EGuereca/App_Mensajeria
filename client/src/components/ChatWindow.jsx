@@ -58,10 +58,18 @@ const ChatWindow = () => {
             const getFreshSecret = async () => {
                 // Force fetch from API to ensure we have the very latest key from DB
                 // activeUsers might be stale if the 'users' broadcast hasn't arrived yet
-                const userData = await api.getUser(from);
-                if (userData && userData.publicKey) {
-                    const importedPubKey = await importKey(userData.publicKey, 'public');
-                    return await deriveSharedSecret(keys.privateKey, importedPubKey);
+                try {
+                    const userData = await api.getUser(from);
+                    if (userData && userData.publicKey) {
+                        let pubKey = userData.publicKey;
+                        if (typeof pubKey === 'string') {
+                            pubKey = JSON.parse(pubKey);
+                        }
+                        const importedPubKey = await importKey(pubKey, 'public');
+                        return await deriveSharedSecret(keys.privateKey, importedPubKey);
+                    }
+                } catch (e) {
+                    console.error("Failed to get fresh secret:", e);
                 }
                 return null;
             };
