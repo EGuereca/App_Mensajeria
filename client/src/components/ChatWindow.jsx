@@ -53,25 +53,43 @@ const ChatWindow = () => {
 
         try {
             let secret = sharedKeys[from];
-            if (!secret) {
-                // Need to get their public key. 
-                // In a real app, users list should include public keys or we fetch them.
-                // Let's assume the 'users' list from socket includes { username, publicKey }
-                // OR we fetch it from API.
-                const userData = activeUsers.find(u => u.username === from) || await api.getUser(from);
 
+            // Helper to fetch fresh key and derive secret
+            const getFreshSecret = async () => {
+                // Force fetch from API to ensure we have the very latest key from DB
+                // activeUsers might be stale if the 'users' broadcast hasn't arrived yet
+                const userData = await api.getUser(from);
                 if (userData && userData.publicKey) {
                     const importedPubKey = await importKey(userData.publicKey, 'public');
-                    secret = await deriveSharedSecret(keys.privateKey, importedPubKey);
-                    setSharedKeys(prev => ({ ...prev, [from]: secret }));
+                    return await deriveSharedSecret(keys.privateKey, importedPubKey);
                 }
+                return null;
+            };
+
+            // First attempt: Get secret if missing
+            if (!secret) {
+                secret = await getFreshSecret();
+                if (secret) setSharedKeys(prev => ({ ...prev, [from]: secret }));
             }
 
             if (secret) {
-                decryptedText = await decryptMessage(encrypted, iv, secret);
+                try {
+                    decryptedText = await decryptMessage(encrypted, iv, secret);
+                } catch (retryErr) {
+                    console.warn(`Decryption failed for ${from}, retrying with fresh key...`);
+                    // Retry logic: Refresh key and try again
+                    secret = await getFreshSecret();
+                    if (secret) {
+                        setSharedKeys(prev => ({ ...prev, [from]: secret }));
+                        decryptedText = await decryptMessage(encrypted, iv, secret);
+                    } else {
+                        throw new Error("Could not derive new secret");
+                    }
+                }
             }
         } catch (err) {
-            console.error("Decryption err:", err);
+            console.error("Final decryption err:", err);
+            decryptedText = "Error: Could not decrypt (Key mismatch)";
         }
 
         setMessages(prev => [...prev, {

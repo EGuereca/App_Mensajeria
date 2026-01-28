@@ -1,4 +1,5 @@
 const messageController = require('../controllers/messageController');
+const User = require('../models/User');
 
 module.exports = (io) => {
     // Map userId (username) -> socketId
@@ -28,6 +29,17 @@ module.exports = (io) => {
         if (username) {
             activeUsers.set(username, { socketId: socket.id, publicKey });
             console.log(`User registered: ${username} with socket ${socket.id}`);
+
+            // Persist/Update user in DB so API has fresh key
+            if (publicKeyStr) {
+                User.findOneAndUpdate(
+                    { username },
+                    { publicKey: publicKeyStr }, // Store as string to match Model
+                    { upsert: true, new: true }
+                ).then(u => console.log('User key updated in DB:', username))
+                    .catch(e => console.error('Error updating DB key:', e));
+            }
+
             broadcastUsers();
         }
 
