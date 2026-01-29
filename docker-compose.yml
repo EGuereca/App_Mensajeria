@@ -9,7 +9,7 @@ services:
     volumes:
       - mongo_data:/data/db
 
-  # 2. BACKEND (Node.js) - HTTPS
+  # 2. BACKEND (Node.js)
   server:
     build: ./server
     container_name: chat-server
@@ -21,10 +21,9 @@ services:
       - mongo
     volumes:
       - ./server:/app
-      - ./certs:/app/certs:ro
       - /app/node_modules
 
-  # 3. FRONTEND (React + Vite) - HTTPS
+  # 3. FRONTEND (React + Vite)
   client:
     build: ./client
     container_name: chat-client
@@ -32,12 +31,10 @@ services:
       - "5173:5173"
     environment:
       - CHOKIDAR_USEPOLLING=true
-      - VITE_API_URL=https://192.168.253.111:5000
     depends_on:
       - server
     volumes:
       - ./client:/app
-      - ./certs:/app/certs:ro
       - /app/node_modules
 
 volumes:
