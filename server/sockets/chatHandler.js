@@ -84,6 +84,22 @@ module.exports = (io) => {
             }
         });
 
+        // Typing indicator
+        socket.on('typing', (data) => {
+            // data: { from, to, isTyping }
+            if (!data?.from || !data?.to) return;
+
+            const recipientData = activeUsers.get(data.to);
+            const recipientSocketId = recipientData ? recipientData.socketId : null;
+
+            if (recipientSocketId) {
+                io.to(recipientSocketId).emit('typing', {
+                    from: data.from,
+                    isTyping: !!data.isTyping,
+                });
+            }
+        });
+
         socket.on('disconnect', () => {
             console.log('Client disconnected:', socket.id);
             let userRemoved = false;

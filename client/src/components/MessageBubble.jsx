@@ -5,18 +5,43 @@ const MessageBubble = ({ message, sender, isMe }) => {
         <div style={{
             display: 'flex',
             justifyContent: isMe ? 'flex-end' : 'flex-start',
-            margin: '5px 0'
+            marginBottom: '12px',
+            padding: '0 8px'
         }}>
             <div style={{
                 maxWidth: '70%',
-                padding: '10px 15px',
-                borderRadius: '15px',
-                backgroundColor: isMe ? '#007bff' : '#f1f0f0',
-                color: isMe ? 'white' : 'black',
-                boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                padding: '12px 16px',
+                borderRadius: isMe 
+                    ? 'var(--radius-md) var(--radius-md) 4px var(--radius-md)' 
+                    : 'var(--radius-md) var(--radius-md) var(--radius-md) 4px',
+                backgroundColor: isMe 
+                    ? 'var(--bg-tertiary)' 
+                    : 'var(--bg-secondary)',
+                color: 'var(--text-primary)',
+                boxShadow: 'var(--shadow-sm)',
+                border: `1px solid ${isMe ? 'var(--border-hover)' : 'var(--border-color)'}`,
+                transition: 'var(--transition)',
+                position: 'relative'
             }}>
-                {!isMe && <div style={{ fontSize: '0.8em', marginBottom: '4px', opacity: 0.8 }}>{sender}</div>}
-                <div style={{ wordBreak: 'break-word' }}>{message}</div>
+                {!isMe && (
+                    <div style={{ 
+                        fontSize: '12px', 
+                        marginBottom: '6px', 
+                        color: 'var(--text-secondary)',
+                        fontWeight: '500',
+                        letterSpacing: '0.2px'
+                    }}>
+                        {sender}
+                    </div>
+                )}
+                <div style={{ 
+                    wordBreak: 'break-word',
+                    fontSize: '15px',
+                    lineHeight: '1.5',
+                    color: 'var(--text-primary)'
+                }}>
+                    {message}
+                </div>
             </div>
         </div>
     );
