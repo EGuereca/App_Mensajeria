@@ -16,7 +16,7 @@ export const connectSocket = (username: string, publicKey: JsonWebKey) => {
         autoConnect: true,
     });
 
-    socket.on('connect', () => {
+    socket.on('connect', () => {s
         console.log('Connected to server with ID:', socket?.id);
     });
 
