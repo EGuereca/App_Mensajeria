@@ -1,5 +1,7 @@
 const express = require('express');
-const http = require('http');
+const https = require('https');
+const fs = require('fs');
+const path = require('path');
 const socketIo = require('socket.io');
 const cors = require('cors');
 require('dotenv').config();
@@ -10,7 +12,14 @@ const messageController = require('./controllers/messageController');
 const chatHandler = require('./sockets/chatHandler');
 
 const app = express();
-const server = http.createServer(app);
+
+// SSL Certificates
+const sslOptions = {
+    key: fs.readFileSync(path.join(__dirname, 'certs/server.key')),
+    cert: fs.readFileSync(path.join(__dirname, 'certs/server.crt'))
+};
+
+const server = https.createServer(sslOptions, app);
 const io = socketIo(server, {
     cors: {
         origin: "*",
@@ -35,4 +44,4 @@ chatHandler(io);
 
 const PORT = process.env.PORT || 5000;
 
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(PORT, '0.0.0.0', () => console.log(`HTTPS Server running on port ${PORT}`));

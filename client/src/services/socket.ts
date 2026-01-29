@@ -2,8 +2,8 @@ import { io, Socket } from 'socket.io-client';
 
 export let socket: Socket | null = null;
 
-// Replace with your actual backend URL
-const URL = 'http://localhost:5000';
+// URL configurable via environment variable for network access
+const URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 export const connectSocket = (username: string, publicKey: JsonWebKey) => {
     if (socket) return socket;
