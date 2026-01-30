@@ -3,7 +3,7 @@ import { io, Socket } from 'socket.io-client';
 export let socket: Socket | null = null;
 
 // URL configurable via environment variable for network access
-const URL = import.meta.env.VITE_API_URL || 'https://localhost:5000';
+const URL = import.meta.env.VITE_API_URL || 'https://localhost:3000';
 
 export const connectSocket = (username: string, publicKey: JsonWebKey) => {
     if (socket) return socket;
