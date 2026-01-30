@@ -17,5 +17,11 @@ export const api = {
         });
         if (!res.ok) throw new Error('Registration failed');
         return res.json();
+    },
+
+    async getHistory(userId1: string, userId2: string) {
+        const res = await fetch(`${API_URL}/messages?userId1=${userId1}&userId2=${userId2}`);
+        if (!res.ok) throw new Error('Failed to fetch history');
+        return res.json();
     }
 };

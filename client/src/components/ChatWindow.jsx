@@ -31,6 +31,60 @@ const ChatWindow = () => {
         scrollToBottom();
     }, [messages]);
 
+    // Load History when selectedUser changes
+    useEffect(() => {
+        if (!selectedUser || !user) return;
+
+        const loadHistory = async () => {
+            try {
+                const history = await api.getHistory(user.username, selectedUser.username);
+
+                // Ensure we have a shared key
+                let secret = sharedKeys[selectedUser.username];
+                if (!secret) {
+                    try {
+                        let pubKey = selectedUser.publicKey;
+                        if (typeof pubKey === 'string') pubKey = JSON.parse(pubKey);
+                        const importedPubKey = await importKey(pubKey, 'public');
+                        secret = await deriveSharedSecret(keys.privateKey, importedPubKey);
+                        setSharedKeys(prev => ({ ...prev, [selectedUser.username]: secret }));
+                    } catch (e) {
+                        console.error("Failed to derive key for history:", e);
+                        return; // Can't decrypt if no key
+                    }
+                }
+
+                const decryptedMessages = await Promise.all(history.map(async (msg) => {
+                    try {
+                        const text = await decryptMessage(msg.cipherText, msg.iv, secret);
+                        return {
+                            sender: msg.sender,
+                            text: text,
+                            isMe: msg.sender === user.username,
+                            timestamp: new Date(msg.createdAt).getTime()
+                        };
+                    } catch (e) {
+                        return {
+                            sender: msg.sender,
+                            text: "Error: Could not decrypt history",
+                            isMe: msg.sender === user.username,
+                            timestamp: new Date(msg.createdAt).getTime()
+                        };
+                    }
+                }));
+
+                setMessages(decryptedMessages);
+            } catch (err) {
+                console.error("Failed to fetch history:", err);
+            }
+        };
+
+        setMessages([]); // Clear previous messages while loading
+
+        // Short delay to allow key derivation if needed or just run it
+        loadHistory();
+    }, [selectedUser, user]); // Dependencies: reload if user or selectedUser changes
+
     // Request active users
     useEffect(() => {
         // Ideally socket emits 'users' on connect, or we request it.
@@ -251,7 +305,7 @@ const ChatWindow = () => {
                             margin: 0,
                             letterSpacing: '-0.3px'
                         }}>
-                            Active Users
+                            Users
                         </h3>
                         <p style={{
                             fontSize: '12px',
@@ -259,7 +313,7 @@ const ChatWindow = () => {
                             marginTop: '4px',
                             marginBottom: 0
                         }}>
-                            {activeUsers.length} {activeUsers.length === 1 ? 'user' : 'users'} online
+                            {activeUsers.filter(u => u.online).length} online
                         </p>
                     </div>
 
@@ -320,9 +374,22 @@ const ChatWindow = () => {
                                         color: 'var(--text-primary)',
                                         fontWeight: '600',
                                         fontSize: '14px',
-                                        flexShrink: 0
+                                        flexShrink: 0,
+                                        position: 'relative'
                                     }}>
                                         {u.username.charAt(0).toUpperCase()}
+                                        {u.online && (
+                                            <div style={{
+                                                position: 'absolute',
+                                                bottom: '-2px',
+                                                right: '-2px',
+                                                width: '12px',
+                                                height: '12px',
+                                                background: '#22c55e',
+                                                border: '2px solid var(--bg-secondary)',
+                                                borderRadius: '50%'
+                                            }} />
+                                        )}
                                     </div>
                                     <div style={{ flex: 1, minWidth: 0 }}>
                                         <div style={{
