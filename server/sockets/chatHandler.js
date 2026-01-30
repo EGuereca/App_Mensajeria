@@ -55,6 +55,14 @@ module.exports = (io) => {
             console.log(`Socket ${socket.id} joined room ${room}`);
         });
 
+        socket.on('get_users', () => {
+            const usersList = Array.from(activeUsers.entries()).map(([username, data]) => ({
+                username,
+                publicKey: data.publicKey
+            }));
+            socket.emit('users', usersList);
+        });
+
         socket.on('send_message', async (data) => {
             // data: { sender, recipient, cipherText, iv }
             console.log('Message received:', data);

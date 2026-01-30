@@ -9,21 +9,22 @@ services:
     volumes:
       - mongo_data:/data/db
 
-  # 2. BACKEND (Node.js)
+  # 2. BACKEND (Node.js) - HTTPS
   server:
     build: ./server
     container_name: chat-server
     ports:
-      - "3000:5000"
+      - "5000:5000"
     environment:
       - MONGO_URI=mongodb://mongo:27017/chat-e2ee
     depends_on:
       - mongo
     volumes:
       - ./server:/app
+      - ./certs:/app/certs:ro
       - /app/node_modules
 
-  # 3. FRONTEND (React + Vite)
+  # 3. FRONTEND (React + Vite) - HTTPS
   client:
     build: ./client
     container_name: chat-client
@@ -31,10 +32,12 @@ services:
       - "5173:5173"
     environment:
       - CHOKIDAR_USEPOLLING=true
+      - VITE_API_URL=https://192.168.253.110:5000
     depends_on:
       - server
     volumes:
       - ./client:/app
+      - ./certs:/app/certs:ro
       - /app/node_modules
 
 volumes:
