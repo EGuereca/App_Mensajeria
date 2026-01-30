@@ -5,12 +5,25 @@ module.exports = (io) => {
     // Map userId (username) -> socketId
     const activeUsers = new Map();
 
-    const broadcastUsers = () => {
-        const usersList = Array.from(activeUsers.entries()).map(([username, data]) => ({
-            username,
-            publicKey: data.publicKey
-        }));
-        io.emit('users', usersList);
+    const broadcastUsers = async () => {
+        try {
+            const users = await User.find({});
+            const usersList = users.map(u => {
+                let pk = u.publicKey;
+                try {
+                    if (typeof pk === 'string') pk = JSON.parse(pk);
+                } catch (e) { }
+
+                return {
+                    username: u.username,
+                    publicKey: pk,
+                    online: activeUsers.has(u.username)
+                };
+            });
+            io.emit('users', usersList);
+        } catch (err) {
+            console.error('Error broadcasting users:', err);
+        }
     };
 
     io.on('connection', (socket) => {
@@ -55,12 +68,25 @@ module.exports = (io) => {
             console.log(`Socket ${socket.id} joined room ${room}`);
         });
 
-        socket.on('get_users', () => {
-            const usersList = Array.from(activeUsers.entries()).map(([username, data]) => ({
-                username,
-                publicKey: data.publicKey
-            }));
-            socket.emit('users', usersList);
+        socket.on('get_users', async () => {
+            try {
+                const users = await User.find({});
+                const usersList = users.map(u => {
+                    let pk = u.publicKey;
+                    try {
+                        if (typeof pk === 'string') pk = JSON.parse(pk);
+                    } catch (e) { }
+
+                    return {
+                        username: u.username,
+                        publicKey: pk,
+                        online: activeUsers.has(u.username)
+                    };
+                });
+                socket.emit('users', usersList);
+            } catch (err) {
+                console.error('Error sending users list:', err);
+            }
         });
 
         socket.on('send_message', async (data) => {
